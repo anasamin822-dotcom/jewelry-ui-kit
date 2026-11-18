@@ -1,0 +1,117 @@
+/* Extracted from unchanged Phase 1 ticket-react styles.css. */
+:root {
+  --h: 272; /* object hue, changed live by colour controls */
+  --bg-0: #07020f;
+  --bg-1: #120826;
+  --surface: #1e1040;
+  --glass: rgba(23, 12, 42, 0.66);
+  --glass-strong: rgba(16, 7, 32, 0.88);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(168, 85, 247, 0.45);
+  --p-300: #d8b4fe;
+  --p-400: #c084fc;
+  --p-500: #a855f7;
+  --p-600: #7c3aed;
+  --p-700: #6d28d9;
+  --gold: #f5c66b;
+  --text: #fff;
+  --text-2: #b8a6d9;
+  --text-3: #7e6ba3;
+  --grad: linear-gradient(135deg, var(--p-600), var(--p-500));
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+  --glow-sm: 0 0 14px rgba(168, 85, 247, 0.45);
+  --glow: 0 0 26px rgba(168, 85, 247, 0.5);
+  --glow-lg: 0 0 60px rgba(168, 85, 247, 0.45);
+  --font: "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  transition: 0.18s;
+}
+.icon-btn:hover {
+  color: #fff;
+  border-color: var(--line-strong);
+  box-shadow: var(--glow-sm);
+}
+.icon-btn:active {
+  transform: scale(0.93);
+}
+.icon-btn.is-active {
+  color: #fff;
+  background: var(--grad);
+  border-color: transparent;
+  box-shadow: var(--glow-sm);
+}
+.icon-btn.lg {
+  width: 48px;
+  height: 48px;
+}
+.topbar-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 16px;
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 26px;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: 0.01em;
+  transition: 0.18s;
+  border: 1px solid transparent;
+}
+.btn svg {
+  width: 17px;
+  height: 17px;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-sm {
+  padding: 9px 18px;
+  font-size: 13px;
+}
+.btn-primary {
+  background: var(--grad);
+  color: #fff;
+  box-shadow: var(--glow);
+}
+.btn-primary:hover {
+  box-shadow: var(--glow-lg);
+  filter: brightness(1.1);
+}
+.btn-secondary {
+  background: rgba(168, 85, 247, 0.14);
+  border-color: var(--line-strong);
+  color: #fff;
+}
+.btn-secondary:hover {
+  background: rgba(168, 85, 247, 0.26);
+  box-shadow: var(--glow-sm);
+}
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line);
+  color: var(--text-2);
+}
+.btn-ghost:hover {
+  color: #fff;
+  border-color: var(--line-strong);
+}
