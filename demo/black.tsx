@@ -86,10 +86,7 @@ function BlackStudio() {
       <main className="noir-layout">
         <section className="noir-stage" aria-label="Live jewelry preview">
           <div className="noir-stage-copy">
-            <div className="noir-eyebrow">
-              <span />
-              01 / JEWELRY COLLECTION
-            </div>
+
             <h1>A little less ordinary.</h1>
             <p>One stone. Your point of view.</p>
           </div>
@@ -160,26 +157,6 @@ function BlackStudio() {
           </div>
         </section>
         <aside className="noir-flow" aria-label="Build your jewelry">
-          <div className="noir-flow-top">
-            <div>
-              <span className="noir-eyebrow">
-                YOUR DESIGN / {String(step + 1).padStart(2, "0")} OF{" "}
-                {String(steps.length).padStart(2, "0")}
-              </span>
-              <h2>
-                {current === "Piece"
-                  ? "What will you make?"
-                  : current === "Ring style"
-                    ? "Choose your silhouette"
-                    : current === "Stone"
-                      ? "The centerpiece"
-                      : current === "Metal"
-                        ? "Set the tone"
-                        : "Make it yours"}
-              </h2>
-            </div>
-            <span className="noir-design-label">{design.piece}</span>
-          </div>
           <div className="noir-flow-content" key={current}>
             {current === "Piece" ? (
               <div className="noir-flow-choices">
