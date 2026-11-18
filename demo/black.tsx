@@ -147,6 +147,7 @@ function BlackStudio() {
                     <button
                       key={piece}
                       aria-label={piece}
+                      aria-pressed={piece === "Ring" ? ring : design.piece === piece}
                       onClick={() => {
                         update({
                           piece: piece === "Ring" ? "Classic Solitaire" : piece,
@@ -175,6 +176,7 @@ function BlackStudio() {
                     <button
                       key={piece}
                       aria-label={piece}
+                      aria-pressed={design.piece===piece}
                       onClick={() => {
                         update({ piece });
                         next();
@@ -202,6 +204,7 @@ function BlackStudio() {
                       <button
                         key={g.name}
                         aria-label={g.name}
+                        aria-pressed={design.gem===g.color}
                         onClick={() => {
                           update({ gem: g.color });
                           next();
@@ -244,6 +247,7 @@ function BlackStudio() {
                   <button
                     key={m.name}
                     aria-label={m.name}
+                    aria-pressed={design.metal===m.tone}
                     onClick={() => {
                       update({ metal: m.tone });
                       next();
@@ -325,6 +329,7 @@ function BlackStudio() {
             {steps.map((label, i) => (
               <button
                 key={label}
+                data-complete={i<step}
                 aria-current={step === i ? "step" : undefined}
                 disabled={i > step}
                 onClick={() => setStep(i)}
