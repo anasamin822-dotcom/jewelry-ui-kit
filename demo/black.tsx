@@ -109,24 +109,6 @@ function BlackStudio() {
                 : "Preparing your studio…"}
             </div>
           )}
-          <div
-            className="noir-scene-switch"
-            role="group"
-            aria-label="Preview scene"
-          >
-            {(["Ring", "Gemstone", "Setting"] as const).map((s, i) => (
-              <button
-                key={s}
-                aria-label={s}
-                disabled={imported && s !== "Ring"}
-                aria-pressed={design.scene === s}
-                onClick={() => update({ scene: s })}
-              >
-                <span>0{i + 1}</span>
-                {s}
-              </button>
-            ))}
-          </div>
           <div className="noir-viewbar">
             <button
               className="noir-orbit"
