@@ -25,6 +25,7 @@ type Props = {
   onReady: () => void;
   onError: () => void;
   onBusy: (busy: boolean) => void;
+  onPartSelect: (part: "Stone" | "Metal") => void;
   api: React.MutableRefObject<StageApi | null>;
 };
 function stoneGeometry(shape: string) {
@@ -188,6 +189,7 @@ function createJewelry(d: StudioDesign) {
     flatShading: true,
   });
   const gemstone = new THREE.Mesh(stoneGeometry(d.shape), gemMat);
+  gemstone.userData.optionPanel = "Stone";
   if (d.scene === "Gemstone") {
     gemstone.scale.setScalar(1.08 * d.size);
     gemstone.rotation.set(0.2, Math.PI / 8, 0.08);
@@ -200,6 +202,7 @@ function createJewelry(d: StudioDesign) {
     for (let i = 0; i < 16; i++) {
       const a = (i / 16) * Math.PI * 2;
       const stone = new THREE.Mesh(stoneGeometry("Round"), gemMat);
+      stone.userData.optionPanel = "Stone";
       stone.scale.setScalar(0.065);
       stone.position.set(Math.cos(a) * 0.5, 1.29, Math.sin(a) * 0.5);
       group.add(stone);
@@ -234,10 +237,13 @@ function createJewelry(d: StudioDesign) {
     crown.add(gemstone);
   }
   group.add(crown);
+  group.traverse((object) => {
+    if (object instanceof THREE.Mesh && !object.userData.optionPanel) object.userData.optionPanel = "Metal";
+  });
   group.position.y = -0.13;
   return group;
 }
-export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: Props) {
+export function BlackStage({ design, rotating, onReady, onError, onBusy, onPartSelect, api }: Props) {
   const [loading, setLoading] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
@@ -247,8 +253,14 @@ export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: 
     controls: OrbitControls;
     camera: THREE.PerspectiveCamera;
   } | null>(null);
-  const callbacks = useRef({ onBusy, onError });
-  callbacks.current = { onBusy, onError };
+  const callbacks = useRef({ onBusy, onError, onPartSelect, design });
+  callbacks.current = { onBusy, onError, onPartSelect, design };
+  const sweepStart = useRef<number | null>(null);
+  const previousMetal = useRef(design.metal);
+  useEffect(() => {
+    if (previousMetal.current !== design.metal && !matchMedia("(prefers-reduced-motion:reduce)").matches) sweepStart.current = performance.now();
+    previousMetal.current = design.metal;
+  }, [design.metal]);
   const latest = useRef(rotating);
   latest.current = rotating;
   useEffect(() => {
@@ -304,6 +316,8 @@ export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: 
     const fill = new THREE.PointLight("#ffffff", 8, 12);
     fill.position.set(-4, 1, -1);
     scene.add(fill);
+    const reflection = new THREE.PointLight("#f0e8ff", 0, 10);
+    scene.add(reflection);
     const platform = new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.6,.15,96),new THREE.MeshStandardMaterial({color:"#251033",metalness:.95,roughness:.16}));
     platform.position.y = -1.37;
     platform.receiveShadow = true;
@@ -337,6 +351,46 @@ export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: 
     });
     scene.add(model);
     sceneRef.current = { scene, model, renderer, controls, camera };
+    // Mesh picking is a tap shortcut only. Orbit, pinch, long press and empty
+    // stage gestures leave the current panel alone. Normal step buttons remain.
+    const canvas = renderer.domElement;
+    const raycaster = new THREE.Raycaster();
+    let tap: { id: number; x: number; y: number; at: number; moved: boolean } | null = null;
+    const pointers = new Set<number>();
+    const pointerDown = (event: PointerEvent) => {
+      pointers.add(event.pointerId);
+      if (pointers.size !== 1 || !event.isPrimary || event.button !== 0) { tap = null; return; }
+      tap = { id: event.pointerId, x: event.clientX, y: event.clientY, at: performance.now(), moved: false };
+    };
+    const pointerMove = (event: PointerEvent) => {
+      if (tap?.id === event.pointerId && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > 6) tap.moved = true;
+    };
+    const pointerUp = (event: PointerEvent) => {
+      const candidate = tap;
+      tap = null;
+      pointers.delete(event.pointerId);
+      if (!candidate || candidate.id !== event.pointerId || candidate.moved ||
+        performance.now() - candidate.at > 600 ||
+        Math.hypot(event.clientX - candidate.x, event.clientY - candidate.y) > 6) return;
+      const piece = callbacks.current.design.piece;
+      if (piece !== "Classic Solitaire" && piece !== "Halo Setting") return;
+      const bounds = canvas.getBoundingClientRect();
+      const pointer = new THREE.Vector2(
+        ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+        -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
+      );
+      scene.updateMatrixWorld(true);
+      camera.updateMatrixWorld(true);
+      raycaster.setFromCamera(pointer, camera);
+      const hit = sceneRef.current && raycaster.intersectObject(sceneRef.current.model, true)[0];
+      const part = hit?.object.userData.optionPanel;
+      if (part === "Stone" || part === "Metal") callbacks.current.onPartSelect(part);
+    };
+    const pointerCancel = (event: PointerEvent) => { pointers.delete(event.pointerId); tap = null; };
+    canvas.addEventListener("pointerdown", pointerDown, true);
+    canvas.addEventListener("pointermove", pointerMove, true);
+    canvas.addEventListener("pointerup", pointerUp, true);
+    canvas.addEventListener("pointercancel", pointerCancel, true);
     const resize = () => {
       const w = el.clientWidth,
         h = el.clientHeight;
@@ -352,7 +406,8 @@ export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: 
     const reduced = matchMedia("(prefers-reduced-motion:reduce)").matches;
     let introStart: number | null = null;
     let intro = !reduced;
-    const stopIntro = () => { intro = false; };
+    let cameraMove: { from: THREE.Vector3; to: THREE.Vector3; at: number } | null = null;
+    const stopIntro = () => { intro = false; cameraMove = null; };
     controls.addEventListener("start", stopIntro);
     const loop = (now: number) => {
       frame = requestAnimationFrame(loop);
@@ -367,6 +422,17 @@ export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: 
       }
       el.dataset.revealing = String(intro);
       controls.autoRotate = latest.current && !reduced && !intro;
+      if (cameraMove) {
+        const t = Math.min((now - cameraMove.at) / 260, 1);
+        camera.position.lerpVectors(cameraMove.from, cameraMove.to, 1 - Math.pow(1 - t, 3));
+        if (t === 1) cameraMove = null;
+      }
+      if (sweepStart.current !== null) {
+        const t = Math.min((now - sweepStart.current) / 280, 1);
+        reflection.position.set(-3 + t * 6, 2.5, 3);
+        reflection.intensity = Math.sin(t * Math.PI) * 8;
+        if (t === 1) { sweepStart.current = null; reflection.intensity = 0; }
+      }
       controls.update();
       renderer.render(scene, camera);
     };
@@ -375,9 +441,14 @@ export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: 
       intro = false;
       if (sceneRef.current) sceneRef.current.model.rotation.y = 0;
     };
+    const glide = (position: THREE.Vector3) => {
+      if (reduced) { camera.position.copy(position); cameraMove = null; }
+      else cameraMove = { from: camera.position.clone(), to: position, at: performance.now() };
+      controls.update();
+    };
     const home = () => {
       settle();
-      camera.position.set(3.7, 2.6, 6.4);
+      glide(new THREE.Vector3(3.7, 2.6, 6.4));
       controls.target.set(0, 0.05, 0);
       controls.update();
     };
@@ -388,9 +459,9 @@ export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: 
       },
       view: (name) => {
         settle();
-        if (name === "Front") camera.position.set(0.1, 1.15, 7.3);
-        else if (name === "Profile") camera.position.set(6.5, 1.6, 0.8);
-        else camera.position.set(0.1, 7, 0.4);
+        if (name === "Front") glide(new THREE.Vector3(0.1, 1.15, 7.3));
+        else if (name === "Profile") glide(new THREE.Vector3(6.5, 1.6, 0.8));
+        else glide(new THREE.Vector3(0.1, 7, 0.4));
         controls.update();
       },
       zoom: (factor) => {
@@ -408,6 +479,10 @@ export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: 
       cancelAnimationFrame(frame);
       ro.disconnect();
       controls.removeEventListener("start", stopIntro);
+      canvas.removeEventListener("pointerdown", pointerDown, true);
+      canvas.removeEventListener("pointermove", pointerMove, true);
+      canvas.removeEventListener("pointerup", pointerUp, true);
+      canvas.removeEventListener("pointercancel", pointerCancel, true);
       controls.dispose();
       env.dispose();
       room.dispose();
@@ -446,6 +521,7 @@ export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: 
     state.scene.add(state.model);
     const target = state.model;
     const reveal = () => {
+      state.renderer.render(state.scene, state.camera);
       if (!matchMedia("(prefers-reduced-motion:reduce)").matches) {
         state.renderer.domElement.animate([{ opacity: .15 }, { opacity: 1 }], { duration: 220, easing: "ease-out" });
       }
@@ -548,7 +624,7 @@ roughnessFactor=mix(roughnessFactor,collectionFinish,jewelryMask);`,
         className="noir-canvas"
         ref={host}
         role="img"
-        aria-label={`Interactive ${design.piece} ${design.scene.toLowerCase()} on a stone pedestal. Drag to orbit; scroll or pinch to zoom.`}
+        aria-label={`Interactive ${design.piece} ${design.scene.toLowerCase()} on a stone pedestal. Tap a stone or the band to open its options. Drag to orbit; scroll or pinch to zoom.`}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Button } from "../controls";
 import { IconSymbols } from "../IconSymbols";
@@ -35,6 +35,7 @@ function SelectionLabel({ text }: { text: string }) {
 function BlackStudio() {
   const [design, setDesign] = useState<StudioDesign>(initial),
     [step, setStep] = useState(0),
+    [collapsed, setCollapsed] = useState(false),
     [rotating, setRotating] = useState(false),
     [ready, setReady] = useState(false),
     [busy, setBusy] = useState(false),
@@ -56,11 +57,52 @@ function BlackStudio() {
     ? ["Piece", "Ring style", "Stone", "Metal", "Colour"]
     : ["Piece", "Stone", "Metal", "Colour"];
   const current = steps[step] || "Colour";
+  const panel = useRef<HTMLDivElement>(null);
+  const progress = useRef<HTMLElement>(null);
+  const stepLight = useRef<HTMLSpanElement>(null);
+  const previousStep = useRef(step);
+  useLayoutEffect(() => {
+    const nav = progress.current;
+    const moveLight = () => {
+      const active = nav?.querySelector<HTMLElement>("[aria-current=step]");
+      if (active && stepLight.current) {
+        stepLight.current.style.width = active.offsetWidth + "px";
+        stepLight.current.style.height = active.offsetHeight + "px";
+        stepLight.current.style.transform = `translate(${active.offsetLeft}px, ${active.offsetTop}px)`;
+      }
+    };
+    moveLight();
+    const observer = new ResizeObserver(moveLight);
+    if (nav) observer.observe(nav);
+    return () => observer.disconnect();
+  }, [step, ring, collapsed]);
+  useEffect(() => {
+    const direction = step >= previousStep.current ? 1 : -1;
+    previousStep.current = step;
+    if (!matchMedia("(prefers-reduced-motion:reduce)").matches) panel.current?.animate(
+      [{ opacity: 0, transform: `translateX(${direction * 8}px)` }, { opacity: 1, transform: "translateX(0)" }],
+      { duration: 200, easing: "ease-out" },
+    );
+  }, [step]);
   const update = (patch: Partial<StudioDesign>) => {
     setDesign((d) => ({ ...d, ...patch }));
     setNotice("");
   };
   const next = () => setStep((n) => Math.min(n + 1, steps.length - 1));
+  const swatchPending = useRef(false);
+  const pickSwatch = async (button: HTMLButtonElement, patch: Partial<StudioDesign>) => {
+    if (swatchPending.current) return;
+    swatchPending.current = true;
+    update(patch);
+    if (!matchMedia("(prefers-reduced-motion:reduce)").matches) {
+      const icon = button.firstElementChild;
+      icon?.animate([{ transform: "scale(.92)" }, { transform: "scale(1.025)", offset: .7 }, { transform: "scale(1)" }], { duration: 180, easing: "ease-out" });
+      const glow = button.animate([{ filter: "drop-shadow(0 0 0 #a855f700)" }, { filter: "drop-shadow(0 0 5px #a855f766)", offset: .4 }, { filter: "drop-shadow(0 0 0 #a855f700)" }], { duration: 180 });
+      await glow.finished.catch(() => {});
+    }
+    swatchPending.current = false;
+    if (button.isConnected) next();
+  };
   const finish = () => {
     setCart((items) => [...items, { ...design }]);
     setNotice(design.piece + " added to your cart");
@@ -104,6 +146,11 @@ function BlackStudio() {
             onReady={() => setReady(true)}
             onError={() => setError(true)}
             onBusy={setBusy}
+            onPartSelect={(part) => {
+              setCollapsed(false);
+              setStep(steps.indexOf(part));
+              setNotice("");
+            }}
             api={api}
           />
           {(!ready || error) && (
@@ -161,8 +208,8 @@ function BlackStudio() {
             <span className="noir-orbit-hint">Drag to orbit · Scroll to zoom</span>
           </div>
         </section>
-        <aside className="noir-flow" aria-label="Build your jewelry">
-          <div className="noir-flow-content" key={current}>
+        <aside data-collapsed={collapsed} className="noir-flow" aria-label={"Build your jewelry: " + current + " options"}>
+          <div ref={panel} id="studio-options" className="noir-flow-content" key={current} hidden={collapsed}>
             {current === "Piece" ? (
               <div className="noir-flow-choices">
                 {(["Ring", "Pendant", "Pearls", "Bracelet"] as const).map(
@@ -228,10 +275,7 @@ function BlackStudio() {
                         key={g.name}
                         aria-label={g.name}
                         aria-pressed={design.gem===g.color}
-                        onClick={() => {
-                          update({ gem: g.color });
-                          next();
-                        }}
+                        onClick={(event) => { void pickSwatch(event.currentTarget, { gem: g.color }); }}
                       >
                         <span
                           style={{ "--gem": g.color } as React.CSSProperties}
@@ -271,10 +315,7 @@ function BlackStudio() {
                     key={m.name}
                     aria-label={m.name}
                     aria-pressed={design.metal===m.tone}
-                    onClick={() => {
-                      update({ metal: m.tone });
-                      next();
-                    }}
+                    onClick={(event) => { void pickSwatch(event.currentTarget, { metal: m.tone }); }}
                   >
                     <MetalOrb tone={m.tone} />
                     <span>{m.name}</span>
@@ -348,14 +389,16 @@ function BlackStudio() {
               </div>
             )}
           </div>
-          <nav className="noir-progress" aria-label="Design steps">
+          <button className="noir-dock-toggle" aria-label={collapsed ? "Show options" : "Hide options"} aria-expanded={!collapsed} aria-controls="studio-options" onClick={() => setCollapsed(!collapsed)}><span aria-hidden="true">{collapsed ? "⌃" : "⌄"}</span></button>
+          <nav ref={progress} className="noir-progress" aria-label="Design steps">
+            <span ref={stepLight} className="noir-step-light" aria-hidden="true" />
             {steps.map((label, i) => (
               <button
                 key={label}
                 data-complete={i<step}
                 aria-current={step === i ? "step" : undefined}
                 disabled={i > step}
-                onClick={() => setStep(i)}
+                onClick={() => { setCollapsed(false); setStep(i); }}
               >
                 <span className="noir-step-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><defs><linearGradient id={"step-"+i} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#f4eaff"/><stop offset=".4" stopColor="#c8a0f4"/><stop offset="1" stopColor="#633b96"/></linearGradient></defs><g fill={"url(#step-"+i+")"} stroke="#ecd9ff" strokeWidth=".8">{label==="Piece"?<><path d="m16 3 12 7v13l-12 7-12-7V10Z"/><path d="m4 10 12 7 12-7M16 17v13" fill="none"/></>:label==="Ring style"?<><ellipse cx="16" cy="20" rx="10" ry="8" fill="none" strokeWidth="5"/><path d="m10 5 3-3h6l3 3-6 8Z"/></>:label==="Stone"?<><path d="M3 11 9 4h14l6 7-13 18Z"/><path d="m3 11 13 18-7-18 7-7 7 7-7 18M3 11h26" fill="none"/></>:label==="Metal"?<><ellipse cx="16" cy="9" rx="12" ry="5"/><path d="M4 9v14c0 7 24 7 24 0V9c0 7-24 7-24 0Z"/><path d="M4 16c0 7 24 7 24 0" fill="none"/></>:<><path d="M16 2C12 9 5 14 5 21a11 11 0 0 0 22 0c0-7-7-12-11-19Z"/><path d="M11 17c-4 5-1 9 3 9" fill="none" strokeWidth="2"/></>}</g></svg></span>
                 <span>{label}</span>
