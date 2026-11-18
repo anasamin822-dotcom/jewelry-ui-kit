@@ -67,3 +67,12 @@ Classic Solitaire and Halo Setting remain independent procedural dummy rings, no
 The dummy gemstone shading is stylized, not physically accurate diamond optics.
 No carat calibration, manufacturing output, checkout, backend or saved designs.
 Three.js is MIT-licensed. Run `npm run typecheck`, `npm run lint` and `npm run build`.
+
+
+### Compact guided flow
+
+The black page now uses a bottom step panel: Piece, Ring style (rings only),
+Stone, Metal, Colour. Choices advance automatically. The final Add to cart
+records a configuration snapshot in a visit-only front-end cart. No checkout,
+payment or persistence after reload. Header image export and scene switcher
+are removed. Imported CC0 collection models retain their original stones.

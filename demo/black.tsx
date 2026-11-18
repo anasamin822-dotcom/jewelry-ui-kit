@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Button } from "../controls";
 import { IconSymbols } from "../IconSymbols";
-import { SectionHeading, MetalOrb } from "../studio";
+import { MetalOrb } from "../studio";
 import { JewelryColorPicker } from "../jewelry/JewelryColorPicker";
 import { BlackStage, type StageApi, type StudioDesign } from "./BlackStage";
 import "../product-kit.css";
@@ -20,31 +20,36 @@ const initial: StudioDesign = {
 };
 function BlackStudio() {
   const [design, setDesign] = useState<StudioDesign>(initial),
-    [tab, setTab] = useState("Stone"),
+    [step, setStep] = useState(0),
     [rotating, setRotating] = useState(false),
     [ready, setReady] = useState(false),
     [error, setError] = useState(false),
-    [compare, setCompare] = useState(false),
     [notice, setNotice] = useState(""),
-    [activeView, setActiveView] = useState("Studio");
-  const imported = ["Pendant", "Pearls", "Bracelet"].includes(design.piece);
+    [activeView, setActiveView] = useState("Studio"),
+    [cart, setCart] = useState<StudioDesign[]>([]),
+    [cartOpen, setCartOpen] = useState(false),
+    [colorTarget, setColorTarget] = useState("Gem");
+  const cartDialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (cartOpen) cartDialog.current?.showModal();
+    else cartDialog.current?.close();
+  }, [cartOpen]);
   const api = useRef<StageApi | null>(null);
+  const ring =
+    design.piece === "Classic Solitaire" || design.piece === "Halo Setting";
+  const steps = ring
+    ? ["Piece", "Ring style", "Stone", "Metal", "Colour"]
+    : ["Piece", "Stone", "Metal", "Colour"];
+  const current = steps[step] || "Colour";
   const update = (patch: Partial<StudioDesign>) => {
     setDesign((d) => ({ ...d, ...patch }));
     setNotice("");
   };
-  const save = () => {
-    try {
-      const a = document.createElement("a");
-      a.href = api.current!.capture();
-      a.download = "noir-jewelry-design.png";
-      a.click();
-      setNotice(
-        "Image saved. This is a concept render, not a production specification.",
-      );
-    } catch {
-      setNotice("Image could not be saved in this browser.");
-    }
+  const next = () => setStep((n) => Math.min(n + 1, steps.length - 1));
+  const finish = () => {
+    setCart((items) => [...items, { ...design }]);
+    setNotice(design.piece + " added to your cart");
+    setCartOpen(true);
   };
   return (
     <div className="noir-app">
@@ -53,27 +58,29 @@ function BlackStudio() {
         <a
           className="noir-brand"
           href="./black.html"
-          aria-label="Jewelry Studio home"
+          aria-label="Jewelry Configurator home"
         >
           <span className="noir-logo">J</span>
-          <span>
-            Jewelry Studio<small>THE BLACK COLLECTION</small>
-          </span>
+          <span>Jewelry Configurator</span>
         </a>
         <div className="noir-header-mid">
           <span className="live-dot" />
           Independent 3D concept
         </div>
-        <Button variant="primary" onClick={save} disabled={!ready || error}>
+        <Button
+          className="noir-cart-button"
+          aria-label={`Open cart, ${cart.length} items`}
+          onClick={() => setCartOpen(true)}
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.6"
+            strokeWidth="1.5"
           >
-            <path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5" />
+            <path d="M3 4h2l2.5 11h11l2-8H6M9 20h.01M18 20h.01" />
           </svg>
-          Save image
+          <span>{cart.length}</span>
         </Button>
       </header>
       <main className="noir-layout">
@@ -87,7 +94,7 @@ function BlackStudio() {
             <p>One stone. Your point of view.</p>
           </div>
           <BlackStage
-            design={compare ? initial : design}
+            design={design}
             rotating={rotating}
             onReady={() => setReady(true)}
             onError={() => setError(true)}
@@ -152,281 +159,310 @@ function BlackStudio() {
             Drag to orbit <span>·</span> Scroll to zoom
           </div>
         </section>
-        <aside className="noir-inspector" aria-label="Design controls">
-          <div className="noir-inspector-title">
-            <span className="noir-eyebrow">DESIGN / 001</span>
-            <h2>{design.piece}</h2>
-            <p>Your stone, set your way.</p>
+        <aside className="noir-flow" aria-label="Build your jewelry">
+          <div className="noir-flow-top">
+            <div>
+              <span className="noir-eyebrow">
+                YOUR DESIGN / {String(step + 1).padStart(2, "0")} OF{" "}
+                {String(steps.length).padStart(2, "0")}
+              </span>
+              <h2>
+                {current === "Piece"
+                  ? "What will you make?"
+                  : current === "Ring style"
+                    ? "Choose your silhouette"
+                    : current === "Stone"
+                      ? "The centerpiece"
+                      : current === "Metal"
+                        ? "Set the tone"
+                        : "Make it yours"}
+              </h2>
+            </div>
+            <span className="noir-design-label">{design.piece}</span>
           </div>
-          <div
-            className="noir-pieces"
-            role="group"
-            aria-label="Jewelry collection"
-          >
-            {(
-              [
-                "Classic Solitaire",
-                "Halo Setting",
-                "Pendant",
-                "Pearls",
-                "Bracelet",
-              ] as const
-            ).map((piece) => (
-              <button
-                key={piece}
-                aria-pressed={design.piece === piece}
-                onClick={() => {
-                  update({ piece, scene: "Ring" });
-                  setError(false);
-                }}
-              >
-                {piece}
-              </button>
-            ))}
-          </div>
-          <nav
-            className="noir-tabs"
-            role="tablist"
-            aria-label="Customize design"
-          >
-            {["Stone", "Metal", "Details"].map((t, i) => (
-              <button
-                key={t}
-                id={"tab-" + t}
-                role="tab"
-                aria-selected={tab === t}
-                tabIndex={tab === t ? 0 : -1}
-                aria-controls="noir-controls"
-                onClick={() => setTab(t)}
-                onKeyDown={(e) => {
-                  if (
-                    !["ArrowRight", "ArrowLeft", "Home", "End"].includes(e.key)
-                  )
-                    return;
-                  e.preventDefault();
-                  const next =
-                    e.key === "Home"
-                      ? 0
-                      : e.key === "End"
-                        ? 2
-                        : (i + (e.key === "ArrowRight" ? 1 : 2)) % 3;
-                  const value = ["Stone", "Metal", "Details"][next];
-                  setTab(value);
-                  requestAnimationFrame(() =>
-                    document.getElementById("tab-" + value)?.focus(),
-                  );
-                }}
-              >
-                {t}
-              </button>
-            ))}
-          </nav>
-          <div
-            className="noir-control-scroll"
-            id="noir-controls"
-            role="tabpanel"
-            aria-labelledby={"tab-" + tab}
-          >
-            {tab === "Stone" && imported ? (
-              <>
-                <SectionHeading
-                  eyebrow="ORIGINAL COLLECTION"
-                  title={design.piece}
-                />
-                <p className="noir-explainer">
-                  The same {design.piece.toLowerCase()} model from our earlier
-                  studio, with its original display and textures. Stone geometry
-                  is fixed for this model. Use Metal for tone and finish.
-                </p>
-                <Button onClick={() => setTab("Metal")}>Edit metal</Button>
-              </>
-            ) : tab === "Stone" ? (
-              <>
-                <SectionHeading
-                  eyebrow="THE CENTERPIECE"
-                  title="A shade of you"
-                />
-                <div className="noir-field-label">
-                  Gem color <span>Visual tone</span>
-                </div>
-                <div className="noir-gems">
-                  {[
-                    { name: "Sapphire", color: "#1644b8" },
-                    { name: "Emerald", color: "#15865d" },
-                    { name: "Ruby", color: "#ac1746" },
-                    { name: "Diamond", color: "#e1ebfa" },
-                  ].map((g) => (
+          <div className="noir-flow-content" key={current}>
+            {current === "Piece" ? (
+              <div className="noir-flow-choices">
+                {(["Ring", "Pendant", "Pearls", "Bracelet"] as const).map(
+                  (piece, i) => (
                     <button
-                      key={g.name}
-                      aria-label={g.name}
-                      aria-pressed={design.gem === g.color}
-                      onClick={() => update({ gem: g.color })}
+                      key={piece}
+                      aria-label={piece}
+                      onClick={() => {
+                        update({
+                          piece: piece === "Ring" ? "Classic Solitaire" : piece,
+                          scene: "Ring",
+                        });
+                        setError(false);
+                        setStep(1);
+                      }}
                     >
                       <span
-                        style={{ "--gem": g.color } as React.CSSProperties}
-                      />
-                      <small>{g.name}</small>
+                        className={"noir-piece-symbol symbol-" + i}
+                        aria-hidden="true"
+                      >
+                        {["◯", "♧", "◌", "◎"][i]}
+                      </span>
+                      <span>{piece}</span>
+                      <span className="noir-choice-arrow">↗</span>
                     </button>
-                  ))}
-                </div>
-                <JewelryColorPicker
-                  value={design.gem}
-                  onChange={(gem) => update({ gem })}
-                />
-                <div className="noir-field-label">
-                  Cut <span>3 options</span>
-                </div>
-                <div className="noir-cuts">
-                  {(["Round", "Oval", "Emerald"] as const).map((shape) => (
+                  ),
+                )}
+              </div>
+            ) : current === "Ring style" ? (
+              <div className="noir-flow-choices two">
+                {(["Classic Solitaire", "Halo Setting"] as const).map(
+                  (piece) => (
                     <button
-                      key={shape}
-                      aria-pressed={design.shape === shape}
-                      onClick={() => update({ shape })}
+                      key={piece}
+                      aria-label={piece}
+                      onClick={() => {
+                        update({ piece });
+                        next();
+                      }}
                     >
-                      <span
-                        className={"noir-cut-icon cut-" + shape.toLowerCase()}
-                      />
-                      {shape === "Emerald" ? "Step" : shape}
+                      <span className="noir-piece-symbol" aria-hidden="true">
+                        {piece === "Classic Solitaire" ? "♢" : "✧"}
+                      </span>
+                      <span>{piece}</span>
+                      <span className="noir-choice-arrow">↗</span>
                     </button>
-                  ))}
+                  ),
+                )}
+              </div>
+            ) : current === "Stone" ? (
+              ring ? (
+                <div className="noir-stone-step">
+                  <div className="noir-gems">
+                    {[
+                      { name: "Sapphire", color: "#1644b8" },
+                      { name: "Emerald", color: "#15865d" },
+                      { name: "Ruby", color: "#ac1746" },
+                      { name: "Diamond", color: "#e1ebfa" },
+                    ].map((g) => (
+                      <button
+                        key={g.name}
+                        aria-label={g.name}
+                        onClick={() => {
+                          update({ gem: g.color });
+                          next();
+                        }}
+                      >
+                        <span
+                          style={{ "--gem": g.color } as React.CSSProperties}
+                        />
+                        <small>{g.name}</small>
+                      </button>
+                    ))}
+                  </div>
+                  <span className="noir-step-hint">
+                    Choose a stone to continue
+                  </span>
                 </div>
-                <label className="noir-scale">
-                  Stone scale <output>{design.size.toFixed(2)}×</output>
-                  <input
-                    type="range"
-                    aria-label="Stone scale"
-                    min="0.8"
-                    max="1.25"
-                    step="0.01"
-                    value={design.size}
-                    onChange={(e) => update({ size: Number(e.target.value) })}
-                  />
-                </label>
-                <p className="noir-footnote">
-                  A visual proportion, not a carat weight.
-                </p>
-              </>
-            ) : tab === "Metal" ? (
-              <>
-                <SectionHeading
-                  eyebrow="THE SETTING"
-                  title="Made of contrast"
-                />
-                <div className="noir-field-label">
-                  Metal color <span>Visual tone</span>
+              ) : (
+                <div className="noir-fixed-stone">
+                  <p>
+                    {design.piece === "Pearls"
+                      ? "Original pearl strand"
+                      : design.piece === "Pendant"
+                        ? "Original teardrop stone"
+                        : "Original charm set"}
+                    <small>
+                      This collection model keeps its original stones and
+                      display.
+                    </small>
+                  </p>
+                  <Button onClick={next}>Keep original →</Button>
                 </div>
-                <div className="noir-metals">
-                  {[
-                    { name: "Platinum", tone: "#e0e3e8" },
-                    { name: "Gold", tone: "#d5af63" },
-                    { name: "Rose", tone: "#c88d79" },
-                  ].map((m) => (
-                    <button
-                      key={m.name}
-                      aria-pressed={design.metal === m.tone}
-                      onClick={() => update({ metal: m.tone })}
-                    >
-                      <MetalOrb tone={m.tone} />
-                      <span>{m.name}</span>
-                    </button>
-                  ))}
-                </div>
-                <JewelryColorPicker
-                  value={design.metal}
-                  onChange={(metal) => update({ metal })}
-                />
-                <div className="noir-field-label">Surface finish</div>
-                <div className="noir-finish">
-                  {(["Polished", "Satin"] as const).map((f) => (
-                    <button
-                      key={f}
-                      aria-pressed={design.finish === f}
-                      onClick={() => update({ finish: f })}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-                <p className="noir-footnote">
-                  Colors suggest a material. They are not a metal-purity
-                  specification.
-                </p>
-              </>
+              )
+            ) : current === "Metal" ? (
+              <div className="noir-metals">
+                {[
+                  { name: "Platinum", tone: "#e0e3e8" },
+                  { name: "Gold", tone: "#d5af63" },
+                  { name: "Rose", tone: "#c88d79" },
+                ].map((m) => (
+                  <button
+                    key={m.name}
+                    aria-label={m.name}
+                    onClick={() => {
+                      update({ metal: m.tone });
+                      next();
+                    }}
+                  >
+                    <MetalOrb tone={m.tone} />
+                    <span>{m.name}</span>
+                    <span className="noir-choice-arrow">↗</span>
+                  </button>
+                ))}
+              </div>
             ) : (
-              <>
-                <SectionHeading
-                  eyebrow="YOUR COMPOSITION"
-                  title="The finer details"
-                />
-                <dl className="noir-specs">
-                  <div>
-                    <dt>Study</dt>
-                    <dd>{design.scene}</dd>
+              <div className="noir-final-step">
+                <div className="noir-custom-zone">
+                  <div className="noir-colour-target">
+                    {(ring ? ["Gem", "Metal"] : ["Metal"]).map((target) => (
+                      <button
+                        key={target}
+                        aria-pressed={(ring ? colorTarget : "Metal") === target}
+                        onClick={() => setColorTarget(target)}
+                      >
+                        {target} colour
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <dt>Stone cut</dt>
-                    <dd>
-                      {design.shape === "Emerald" ? "Step" : design.shape}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Stone scale</dt>
-                    <dd>{design.size.toFixed(2)}×</dd>
-                  </div>
-                  <div>
-                    <dt>Finish</dt>
-                    <dd>{design.finish}</dd>
-                  </div>
-                  <div>
-                    <dt>Renderer</dt>
-                    <dd>Independent WebGL</dd>
-                  </div>
-                </dl>
-                <p className="noir-explainer">
-                  An original procedural ring, cut gemstone and stone pedestal.
-                  A design study inspired by your reference, not a scanned or
-                  manufacturing-ready model.
-                </p>
+                  <JewelryColorPicker
+                    value={
+                      ring && colorTarget === "Gem" ? design.gem : design.metal
+                    }
+                    onChange={(value) =>
+                      update(
+                        ring && colorTarget === "Gem"
+                          ? { gem: value }
+                          : { metal: value },
+                      )
+                    }
+                  />
+                </div>
+                <div className="noir-final-options">
+                  {ring && (
+                    <select
+                      aria-label="Stone cut"
+                      value={design.shape}
+                      onChange={(e) =>
+                        update({
+                          shape: e.target.value as StudioDesign["shape"],
+                        })
+                      }
+                    >
+                      <option>Round</option>
+                      <option>Oval</option>
+                      <option value="Emerald">Step</option>
+                    </select>
+                  )}
+                  <select
+                    aria-label="Surface finish"
+                    value={design.finish}
+                    onChange={(e) =>
+                      update({
+                        finish: e.target.value as StudioDesign["finish"],
+                      })
+                    }
+                  >
+                    <option>Polished</option>
+                    <option>Satin</option>
+                  </select>
+                </div>
                 <Button
-                  onClick={() => {
-                    setDesign(initial);
-                    api.current?.reset();
-                    setActiveView("Studio");
-                    setNotice("Design reset");
-                  }}
+                  variant="primary"
+                  disabled={!ready || error}
+                  onClick={finish}
                 >
-                  Reset design
+                  Add to cart <span>＋</span>
                 </Button>
-              </>
+              </div>
             )}
           </div>
-          <footer className="noir-inspector-footer">
-            <Button
-              className="noir-compare"
-              aria-pressed={compare}
-              onPointerDown={(e) => {
-                e.currentTarget.setPointerCapture(e.pointerId);
-                setCompare(true);
-              }}
-              onPointerUp={() => setCompare(false)}
-              onPointerCancel={() => setCompare(false)}
-              onBlur={() => setCompare(false)}
-              onKeyDown={(e) => {
-                if (e.key === " " || e.key === "Enter") {
-                  e.preventDefault();
-                  setCompare(true);
-                }
-              }}
-              onKeyUp={() => setCompare(false)}
-            >
-              ◐ &nbsp; {compare ? "Original design" : "Hold to compare"}
-            </Button>
-            <span className="noir-local-note">
-              No SDK. No checkout. Just your idea.
-            </span>
-          </footer>
+          <nav className="noir-progress" aria-label="Design steps">
+            {steps.map((label, i) => (
+              <button
+                key={label}
+                aria-current={step === i ? "step" : undefined}
+                disabled={i > step}
+                onClick={() => setStep(i)}
+              >
+                <span>{i < step ? "✓" : String(i + 1).padStart(2, "0")}</span>
+                <span>{label}</span>
+              </button>
+            ))}
+            {step > 0 && (
+              <button
+                className="noir-back"
+                onClick={() => setStep((n) => n - 1)}
+              >
+                ← Back
+              </button>
+            )}
+          </nav>
         </aside>
       </main>
+      {
+        <dialog
+          aria-label="Your cart"
+          ref={cartDialog}
+          onCancel={() => setCartOpen(false)}
+          className="noir-cart-backdrop"
+          onClick={() => setCartOpen(false)}
+        >
+          <section
+            className="noir-cart-panel"
+
+            aria-label="Your cart"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header>
+              <div>
+                <span className="noir-eyebrow">YOUR COLLECTION</span>
+                <h2>
+                  Your cart <small>{cart.length}</small>
+                </h2>
+              </div>
+              <Button
+                aria-label="Close cart"
+                onClick={() => setCartOpen(false)}
+              >
+                ×
+              </Button>
+            </header>
+            <p className="noir-cart-note">
+              Designs are kept for this visit. No checkout or payment.
+            </p>
+            <div className="noir-cart-items">
+              {cart.length === 0 ? (
+                <p>Your collection starts with one idea.</p>
+              ) : (
+                cart.map((item, i) => (
+                  <article key={i}>
+                    <div
+                      className="noir-cart-tone"
+                      style={{ background: item.metal }}
+                    >
+                      <i style={{ background: item.gem }} />
+                    </div>
+                    <div>
+                      <h3>{item.piece}</h3>
+                      <p>
+                        {item.shape === "Emerald" ? "Step" : item.shape} ·{" "}
+                        {item.finish}
+                      </p>
+                      <div className="noir-cart-swatches">
+                        <i style={{ background: item.gem }} />
+                        <i style={{ background: item.metal }} />
+                      </div>
+                    </div>
+                    <button
+                      aria-label={"Remove " + item.piece}
+                      onClick={() =>
+                        setCart((items) => items.filter((_, j) => j !== i))
+                      }
+                    >
+                      ×
+                    </button>
+                  </article>
+                ))
+              )}
+            </div>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setCartOpen(false);
+                setStep(0);
+              }}
+            >
+              Create another piece →
+            </Button>
+          </section>
+        </dialog>
+      }
       <div className="noir-status" role="status">
         {notice}
       </div>
