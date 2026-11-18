@@ -891,3 +891,204 @@ input[type="range"] {
     grid-column: auto;
   }
 }
+
+/* Complete reusable picker layout, including its top-layer modal. */
+.js-color-dialog {
+  width: min(348px, calc(100vw - 24px));
+  max-height: calc(100svh - 24px);
+  padding: 18px;
+  margin: auto;
+  border: 1px solid #bda4d5;
+  border-radius: 18px;
+  background: #bda4d5;
+  color: #bda4d5;
+  box-shadow: 0 30px 100px #bda4d5;
+  overflow: hidden;
+  font-family: Manrope, sans-serif;
+}
+.js-color-dialog::backdrop {
+  background: #0009;
+  backdrop-filter: blur(5px);
+}
+.js-picker-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.js-picker-head small {
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: #bda4d5;
+}
+.js-picker-head h2 {
+  font-size: 18px;
+  font-weight: 550;
+  margin: 4px 0 0;
+}
+.js-picker-head button,
+.js-picker-hue button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #bda4d5;
+  border-radius: 10px;
+  background: #bda4d5;
+  color: #bda4d5;
+  font-size: 24px;
+  cursor: pointer;
+}
+.js-sv-square {
+  position: relative;
+  width: 100%;
+  height: 168px;
+  border-radius: 8px;
+  background-image:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, var(--text), transparent);
+  cursor: crosshair;
+  touch-action: none;
+  outline-offset: 4px;
+}
+.js-sv-square i {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--text);
+  border-radius: 50%;
+  box-shadow: 0 0 2px 1px #000;
+  pointer-events: none;
+}
+.js-picker-hue {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+}
+.js-picker-hue button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.js-picker-hue label {
+  flex: 1;
+  min-width: 0;
+}
+.js-picker-hue label > span {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #bda4d5;
+}
+.js-picker-hue b {
+  font-weight: 400;
+}
+.js-picker-hue input {
+  appearance: none;
+  width: 100%;
+  height: 12px;
+  background: linear-gradient(to right, red, #ff0, #0f0, #0ff, #00f, #f0f, red);
+  border-radius: 10px;
+  cursor: pointer;
+  margin: 10px 0;
+}
+.js-picker-hue input::-webkit-slider-thumb {
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  border: 2px solid var(--text);
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 1px 4px #bda4d5;
+}
+.js-picker-hue input::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--text);
+  border-radius: 50%;
+  background: transparent;
+}
+.js-picker-hex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  border: 1px solid #bda4d5;
+  border-radius: 9px;
+  padding: 0 12px;
+  min-height: 44px;
+}
+.js-picker-hex label,
+.js-picker-hex > span {
+  font-size: 10px;
+  color: #bda4d5;
+}
+.js-picker-hex input {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  color: var(--text);
+  border: 0;
+  font:
+    500 13px Manrope,
+    sans-serif;
+  letter-spacing: 0.5px;
+  padding: 11px 0;
+}
+.js-picker-hex i {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1px solid #bda4d5;
+}
+.js-picker-error {
+  font-size: 10px;
+  color: #bda4d5;
+  margin: 6px 0;
+}
+.js-picker-saved {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 11px;
+  color: #bda4d5;
+}
+.js-picker-saved button {
+  background: transparent;
+  border: 0;
+  color: #bda4d5;
+  font: inherit;
+  min-height: 32px;
+  cursor: pointer;
+}
+.js-saved-swatches {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.js-saved-swatches button {
+  width: calc((100% - 56px) / 8);
+  aspect-ratio: 1;
+  border: 1px solid #bda4d5;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.js-saved-swatches button[aria-pressed="true"] {
+  outline: 2px solid #bda4d5;
+  outline-offset: 2px;
+}
+.js-picker-caption {
+  font-size: 9px;
+  color: #bda4d5;
+  line-height: 1.5;
+  margin: 12px 0 0;
+}
+.js-color-dialog :focus-visible,
+.js-color-trigger:focus-visible {
+  outline: 2px solid #bda4d5;
+  outline-offset: 3px;
+}
+
+
+.noir-app .js-color-dialog{margin:auto;overflow:auto;background:#17141d;max-height:calc(100dvh - 24px)}.noir-app .js-picker-hex{background:#211a2b;border-color:#594269}.noir-app .js-picker-head button,.noir-app .js-picker-hue button{background:#282031;border-color:#594269}.noir-app .js-picker-hex input{background:transparent;color:#fff;font-size:16px}.noir-app .js-picker-error{color:#ffb5c1}.noir-app .js-picker-caption{color:#bdb2c9}
