@@ -24,6 +24,7 @@ type Props = {
   rotating: boolean;
   onReady: () => void;
   onError: () => void;
+  onBusy: (busy: boolean) => void;
   api: React.MutableRefObject<StageApi | null>;
 };
 function stoneGeometry(shape: string) {
@@ -236,7 +237,7 @@ function createJewelry(d: StudioDesign) {
   group.position.y = -0.13;
   return group;
 }
-export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
+export function BlackStage({ design, rotating, onReady, onError, onBusy, api }: Props) {
   const [loading, setLoading] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
@@ -246,6 +247,8 @@ export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
     controls: OrbitControls;
     camera: THREE.PerspectiveCamera;
   } | null>(null);
+  const callbacks = useRef({ onBusy, onError });
+  callbacks.current = { onBusy, onError };
   const latest = useRef(rotating);
   latest.current = rotating;
   useEffect(() => {
@@ -347,16 +350,33 @@ export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
     let frame = 0,
       previous = 0;
     const reduced = matchMedia("(prefers-reduced-motion:reduce)").matches;
+    let introStart: number | null = null;
+    let intro = !reduced;
+    const stopIntro = () => { intro = false; };
+    controls.addEventListener("start", stopIntro);
     const loop = (now: number) => {
       frame = requestAnimationFrame(loop);
       if (document.hidden || now - previous < 1000 / 40) return;
       previous = now;
-      controls.autoRotate = latest.current && !reduced;
+      if (intro && sceneRef.current) {
+        introStart ??= now;
+        const t = Math.min((now - introStart) / 1400, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        sceneRef.current.model.rotation.y = -(Math.PI / 2) * (1 - eased);
+        if (t === 1) intro = false;
+      }
+      el.dataset.revealing = String(intro);
+      controls.autoRotate = latest.current && !reduced && !intro;
       controls.update();
       renderer.render(scene, camera);
     };
     frame = requestAnimationFrame(loop);
+    const settle = () => {
+      intro = false;
+      if (sceneRef.current) sceneRef.current.model.rotation.y = 0;
+    };
     const home = () => {
+      settle();
       camera.position.set(3.7, 2.6, 6.4);
       controls.target.set(0, 0.05, 0);
       controls.update();
@@ -367,12 +387,14 @@ export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
         return renderer.domElement.toDataURL("image/png");
       },
       view: (name) => {
+        settle();
         if (name === "Front") camera.position.set(0.1, 1.15, 7.3);
         else if (name === "Profile") camera.position.set(6.5, 1.6, 0.8);
         else camera.position.set(0.1, 7, 0.4);
         controls.update();
       },
       zoom: (factor) => {
+        stopIntro();
         camera.position
           .sub(controls.target)
           .multiplyScalar(factor)
@@ -385,6 +407,7 @@ export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
     return () => {
       cancelAnimationFrame(frame);
       ro.disconnect();
+      controls.removeEventListener("start", stopIntro);
       controls.dispose();
       env.dispose();
       room.dispose();
@@ -422,6 +445,11 @@ export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
     state.model = new THREE.Group();
     state.scene.add(state.model);
     const target = state.model;
+    const reveal = () => {
+      if (!matchMedia("(prefers-reduced-motion:reduce)").matches) {
+        state.renderer.domElement.animate([{ opacity: .15 }, { opacity: 1 }], { duration: 220, easing: "ease-out" });
+      }
+    };
     const file =
       design.piece === "Pendant"
         ? "pendant"
@@ -432,6 +460,7 @@ export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
             : null;
     if (file) {
       setLoading(true);
+      callbacks.current.onBusy(true);
       new GLTFLoader().load(
         new URL("./models/studio/", document.baseURI).href + file + ".glb",
         (gltf) => {
@@ -482,18 +511,23 @@ roughnessFactor=mix(roughnessFactor,collectionFinish,jewelryMask);`,
           });
           target.add(asset);
           setLoading(false);
+          callbacks.current.onBusy(false);
+          reveal();
         },
         undefined,
         () => {
           if (!cancelled) {
             setLoading(false);
-            onError();
+            callbacks.current.onBusy(false);
+            callbacks.current.onError();
           }
         },
       );
     } else {
       setLoading(false);
+      callbacks.current.onBusy(false);
       target.add(createJewelry(design));
+      reveal();
       target.traverse((o) => {
         if (o instanceof THREE.Mesh) o.castShadow = true;
       });
@@ -505,8 +539,9 @@ roughnessFactor=mix(roughnessFactor,collectionFinish,jewelryMask);`,
   return (
     <>
       {loading && (
-        <div className="noir-loading" role="status">
-          Loading {design.piece}…
+        <div className="noir-loading noir-model-loading" role="status">
+          <span className="noir-load-orbit" aria-hidden="true"><i /></span>
+          <span>Loading {design.piece}…</span>
         </div>
       )}
       <div

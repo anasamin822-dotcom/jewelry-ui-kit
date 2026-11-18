@@ -18,11 +18,26 @@ const initial: StudioDesign = {
   scene: "Ring",
   finish: "Polished",
 };
+function SelectionLabel({ text }: { text: string }) {
+  const current = useRef<HTMLSpanElement>(null);
+  const previous = useRef<HTMLSpanElement>(null);
+  const last = useRef(text);
+  useEffect(() => {
+    if (last.current === text) return;
+    if (previous.current) previous.current.textContent = last.current;
+    last.current = text;
+    if (matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+    previous.current?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: "forwards" });
+    current.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180 });
+  }, [text]);
+  return <span className="noir-selection-label"><span ref={previous} aria-hidden="true" className="noir-label-previous" /><span ref={current}>{text}</span></span>;
+}
 function BlackStudio() {
   const [design, setDesign] = useState<StudioDesign>(initial),
     [step, setStep] = useState(0),
     [rotating, setRotating] = useState(false),
     [ready, setReady] = useState(false),
+    [busy, setBusy] = useState(false),
     [error, setError] = useState(false),
     [notice, setNotice] = useState(""),
     [activeView, setActiveView] = useState("Studio"),
@@ -52,7 +67,9 @@ function BlackStudio() {
     setCartOpen(true);
   };
   return (
-    <div className="noir-app">
+    <div className="noir-app" onPointerDownCapture={(e) => {
+      if (e.target instanceof Element && !e.target.closest(".noir-header, dialog")) e.currentTarget.dataset.interacting = "true";
+    }} onPointerUpCapture={(e) => { e.currentTarget.dataset.interacting = "false"; }} onPointerCancelCapture={(e) => { e.currentTarget.dataset.interacting = "false"; }} onFocusCapture={(e) => { e.currentTarget.dataset.focused = String(e.target instanceof Element && e.target.matches(":focus-visible")); }} onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.dataset.focused = "false"; }}>
       <IconSymbols />
       <header className="noir-header">
         <a
@@ -80,12 +97,13 @@ function BlackStudio() {
         </Button>
       </header>
       <main className="noir-layout">
-        <section className="noir-stage" aria-label="Live jewelry preview"><div className="aurora-stage" aria-hidden="true"><i className="aurora-arch arch-one"/><i className="aurora-arch arch-two"/><i className="aurora-arch arch-three"/><i className="aurora-plinth"/>{Array.from({length:12},(_,i)=><i className="aurora-spark" key={i} style={{left:(7+i*19%88)+"%",top:(12+i*13%58)+"%",animationDelay:(i*.63)+"s"}}/>)}</div>
+        <section className="noir-stage" aria-label="Live jewelry preview" aria-busy={busy || !ready}><div className="aurora-stage" aria-hidden="true"><i className="aurora-arch arch-one"/><i className="aurora-arch arch-two"/><i className="aurora-arch arch-three"/><i className="aurora-plinth"/>{Array.from({length:12},(_,i)=><i className="aurora-spark" key={i} style={{left:(7+i*19%88)+"%",top:(12+i*13%58)+"%",animationDelay:(i*.63)+"s"}}/>)}</div>
           <BlackStage
             design={design}
             rotating={rotating}
             onReady={() => setReady(true)}
             onError={() => setError(true)}
+            onBusy={setBusy}
             api={api}
           />
           {(!ready || error) && (
@@ -135,7 +153,12 @@ function BlackStudio() {
             </button>
           </div>
           <div className="noir-drag">
-            Drag to orbit <span>·</span> Scroll to zoom
+            <span className="noir-selection-summary" aria-label="Selected materials">
+              <SelectionLabel text={ring ? ({ "#1644b8": "Sapphire", "#15865d": "Emerald", "#ac1746": "Ruby", "#e1ebfa": "Diamond" }[design.gem] || "Custom stone") : "Original stones"} />
+              <span aria-hidden="true">·</span>
+              <SelectionLabel text={({ "#e0e3e8": "Platinum", "#d5af63": "Gold", "#c88d79": "Rose" }[design.metal] || "Custom metal")} />
+            </span>
+            <span className="noir-orbit-hint">Drag to orbit · Scroll to zoom</span>
           </div>
         </section>
         <aside className="noir-flow" aria-label="Build your jewelry">
@@ -317,7 +340,7 @@ function BlackStudio() {
                 </div>
                 <Button
                   variant="primary"
-                  disabled={!ready || error}
+                  disabled={!ready || busy || error}
                   onClick={finish}
                 >
                   Add to cart <span>＋</span>
