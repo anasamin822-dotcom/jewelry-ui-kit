@@ -39,10 +39,29 @@ npm run lint
 
 ## Scope
 
-No 3D renderer, proprietary SDK, application history, 3D product assets,
+No proprietary SDK, application history, external 3D product assets,
 credentials, checkout, pricing, payment or order backend is included. The cart
 resets on page reload. Sizing/carat values are visual design inputs, not a
 manufacturing or calibrated fitting specification. This repository contains source plus a static interactive preview. It is not an npm release.
 The demo uses a neutral Canvas 2D placeholder, not a 3D engine. Camera/motion controls
 are hidden in the demo because there is no 3D renderer. Comparison and PNG export
 use the placeholder image. The rest of the components are interactive.
+
+
+## Black Studio reference study
+
+Run `npm run dev` and open `/black.html` for a separate black-mode 3D concept.
+The existing `/index.html` kit gallery remains unchanged.
+
+- Uses the kit Button, SectionHeading, MetalOrb, JewelryColorPicker and theme foundation.
+- Original Three.js procedural ring, loose faceted gemstone, bare setting and rough stone pedestal.
+- Gem and metal tones, three cuts, stone scale, polished/satin finish, orbit,
+  camera views, zoom, optional rotation, reset and canvas PNG export.
+- Hold-to-compare is available on desktop. The mobile inspector scrolls internally.
+- Reduced-motion preference disables automatic rotation.
+
+This is an independent visual prototype, not the reference site's implementation.
+No VictorShell code, SDK, models, license config or credentials are included.
+The dummy gemstone shading is stylized, not physically accurate diamond optics.
+No carat calibration, manufacturing output, checkout, backend or saved designs.
+Three.js is MIT-licensed. Run `npm run typecheck`, `npm run lint` and `npm run build`.
