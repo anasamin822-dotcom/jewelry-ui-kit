@@ -301,22 +301,22 @@ export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
     const fill = new THREE.PointLight("#ffffff", 8, 12);
     fill.position.set(-4, 1, -1);
     scene.add(fill);
-    const platform = pedestal(1.6, 0.25);
+    const platform = new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.6,.15,96),new THREE.MeshStandardMaterial({color:"#251033",metalness:.95,roughness:.16}));
     platform.position.y = -1.37;
     platform.receiveShadow = true;
     platform.castShadow = true;
-    scene.add(platform);
+
     const small = pedestal(0.5, 0.2);
     small.position.set(2, -1.55, -1);
     small.rotation.y = 0.6;
-    scene.add(small);
+
     const chip = new THREE.Mesh(
       new THREE.DodecahedronGeometry(0.19, 0),
       new THREE.MeshStandardMaterial({ color: "#55565f", roughness: 0.9 }),
     );
     chip.position.set(-2, -1.55, 0.8);
     chip.rotation.set(0.5, 0.2, 0.3);
-    scene.add(chip);
+
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(100, 100),
       new THREE.MeshBasicMaterial({ color: "#08090c" }),
@@ -324,7 +324,7 @@ export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -1.62;
     floor.receiveShadow = true;
-    scene.add(floor);
+
     const model = createJewelry(design);
     model.traverse((o) => {
       if (o instanceof THREE.Mesh) {

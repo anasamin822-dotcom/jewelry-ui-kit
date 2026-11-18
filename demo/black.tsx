@@ -84,7 +84,7 @@ function BlackStudio() {
         </Button>
       </header>
       <main className="noir-layout">
-        <section className="noir-stage" aria-label="Live jewelry preview">
+        <section className="noir-stage" aria-label="Live jewelry preview"><div className="aurora-stage" aria-hidden="true"><i className="aurora-arch arch-one"/><i className="aurora-arch arch-two"/><i className="aurora-arch arch-three"/><i className="aurora-plinth"/>{Array.from({length:12},(_,i)=><i className="aurora-spark" key={i} style={{left:(7+i*19%88)+"%",top:(12+i*13%58)+"%",animationDelay:(i*.63)+"s"}}/>)}</div>
           <BlackStage
             design={design}
             rotating={rotating}
