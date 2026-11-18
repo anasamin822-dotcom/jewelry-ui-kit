@@ -60,13 +60,9 @@ function BlackStudio() {
           href="./black.html"
           aria-label="Jewelry Configurator home"
         >
-          <span className="noir-logo">J</span>
-          <span>Jewelry Configurator</span>
+          <span className="noir-logo">V</span>
+          <span className="noir-brand-stack">VictorShell<small>Jewelry Configurator</small></span>
         </a>
-        <div className="noir-header-mid">
-          <span className="live-dot" />
-          Independent 3D concept
-        </div>
         <Button
           className="noir-cart-button"
           aria-label={`Open cart, ${cart.length} items`}
