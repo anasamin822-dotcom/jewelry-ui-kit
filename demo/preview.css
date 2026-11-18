@@ -1,0 +1,10 @@
+.demo-stage{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:20px;box-sizing:border-box}
+.demo-stage canvas{max-width:100%;max-height:72%;width:auto;height:auto;object-fit:contain}
+.demo-label{text-align:center;color:var(--text-2);font:11px var(--font);display:grid;gap:8px;z-index:1}
+.demo-label strong{color:var(--p-300);letter-spacing:2px;font-size:12px}
+.demo-stage p{font:10px var(--font);color:var(--text-2);text-align:center;margin:8px 0}
+.js-stage-label h1,.js-podium,.kit-stage-index,.js-gesture{display:none!important}
+.js-camera-presets,.js-viewbar{display:none!important}
+.kit-atelier .js-canvas{inset:68px 0 50px!important}
+@media(max-width:900px){.kit-atelier .js-canvas{inset:42px 0 45px!important}.demo-stage{padding:8px}.demo-stage canvas{max-height:65%}.demo-label{font-size:10px}.demo-label strong{font-size:11px}}
+.kit-stage-spec,.kit-keyboard-note{display:none!important}

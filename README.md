@@ -42,5 +42,7 @@ npm run lint
 No 3D renderer, proprietary SDK, application history, 3D product assets,
 credentials, checkout, pricing, payment or order backend is included. The cart
 resets on page reload. Sizing/carat values are visual design inputs, not a
-manufacturing or calibrated fitting specification. This repository contains
-source; it is not an npm release or a hosted interactive preview.
+manufacturing or calibrated fitting specification. This repository contains source plus a static interactive preview. It is not an npm release.
+The demo uses a neutral Canvas 2D placeholder, not a 3D engine. Camera/motion controls
+are hidden in the demo because there is no 3D renderer. Comparison and PNG export
+use the placeholder image. The rest of the components are interactive.

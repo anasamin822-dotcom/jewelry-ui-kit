@@ -171,7 +171,7 @@ export function StudioHint({ onClose }: { onClose: () => void }) {
     <div className="kit-studio-hint" role="status">
       <span className="kit-hint-symbol">↔</span>
       <span>
-        <strong>Make it yours.</strong> Drag the jewel. Choose a material.
+        <strong>Make it yours.</strong> Choose a material. Try the tools and cart.
         Explore every detail.
       </span>
       <button onClick={onClose} aria-label="Dismiss studio hint">
