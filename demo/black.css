@@ -1655,3 +1655,7 @@ input[type="range"] {
 .noir-cart-panel {
   width: 100%;
 }
+
+/* Centered sculpted step icons, with no numeric badges. */
+.noir-progress{justify-content:center;position:relative;gap:28px}.noir-progress button{flex:0 0 auto}.noir-progress button>.noir-step-icon:first-child{width:27px;height:27px;border:0;border-radius:0;background:transparent;box-shadow:none;display:inline-flex;align-items:center;justify-content:center}.noir-step-icon svg{width:25px;height:25px;filter:drop-shadow(0 3px 2px #000b) drop-shadow(0 0 4px #a66ce633)}.noir-progress button[aria-current="step"]>.noir-step-icon:first-child{background:transparent;color:#e5cdff;box-shadow:none}.noir-progress button[aria-current="step"] .noir-step-icon svg{filter:drop-shadow(0 3px 2px #000b) drop-shadow(0 0 6px #b479fb88)}.noir-progress .noir-back{position:absolute;right:0;margin-left:0}
+@media(max-width:650px){.noir-progress{gap:0;justify-content:space-evenly;padding-inline:0}.noir-progress button{flex:1;font-size:8px;gap:5px}.noir-progress button>.noir-step-icon:first-child{width:23px;height:23px}.noir-step-icon svg{width:22px;height:22px}.noir-progress .noir-back{flex:0;position:absolute;right:0;top:-22px;width:22px;height:20px}.noir-progress .noir-back:after{font-size:16px}}

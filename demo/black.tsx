@@ -85,11 +85,6 @@ function BlackStudio() {
       </header>
       <main className="noir-layout">
         <section className="noir-stage" aria-label="Live jewelry preview">
-          <div className="noir-stage-copy">
-
-            <h1>A little less ordinary.</h1>
-            <p>One stone. Your point of view.</p>
-          </div>
           <BlackStage
             design={design}
             rotating={rotating}
@@ -97,15 +92,6 @@ function BlackStudio() {
             onError={() => setError(true)}
             api={api}
           />
-          <div className="noir-waterline">
-            <span>
-              NOIR /{" "}
-              {design.scene === "Ring"
-                ? design.piece.toUpperCase()
-                : design.scene.toUpperCase()}
-            </span>
-            <span>3D COLLECTION · CONCEPT ONLY</span>
-          </div>
           {(!ready || error) && (
             <div className="noir-loading" role="status">
               {error
@@ -347,7 +333,7 @@ function BlackStudio() {
                 disabled={i > step}
                 onClick={() => setStep(i)}
               >
-                <span>{i < step ? "✓" : String(i + 1).padStart(2, "0")}</span>
+                <span className="noir-step-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><defs><linearGradient id={"step-"+i} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#f4eaff"/><stop offset=".4" stopColor="#c8a0f4"/><stop offset="1" stopColor="#633b96"/></linearGradient></defs><g fill={"url(#step-"+i+")"} stroke="#ecd9ff" strokeWidth=".8">{label==="Piece"?<><path d="m16 3 12 7v13l-12 7-12-7V10Z"/><path d="m4 10 12 7 12-7M16 17v13" fill="none"/></>:label==="Ring style"?<><ellipse cx="16" cy="20" rx="10" ry="8" fill="none" strokeWidth="5"/><path d="m10 5 3-3h6l3 3-6 8Z"/></>:label==="Stone"?<><path d="M3 11 9 4h14l6 7-13 18Z"/><path d="m3 11 13 18-7-18 7-7 7 7-7 18M3 11h26" fill="none"/></>:label==="Metal"?<><ellipse cx="16" cy="9" rx="12" ry="5"/><path d="M4 9v14c0 7 24 7 24 0V9c0 7-24 7-24 0Z"/><path d="M4 16c0 7 24 7 24 0" fill="none"/></>:<><path d="M16 2C12 9 5 14 5 21a11 11 0 0 0 22 0c0-7-7-12-11-19Z"/><path d="M11 17c-4 5-1 9 3 9" fill="none" strokeWidth="2"/></>}</g></svg></span>
                 <span>{label}</span>
               </button>
             ))}
