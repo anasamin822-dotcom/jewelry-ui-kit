@@ -1,8 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 export type StudioDesign = {
+  piece:
+    "Classic Solitaire" | "Halo Setting" | "Pendant" | "Pearls" | "Bracelet";
   metal: string;
   gem: string;
   shape: "Round" | "Oval" | "Emerald";
@@ -192,6 +195,15 @@ function createJewelry(d: StudioDesign) {
     return group;
   }
   group.add(ringBand(metal));
+  if (d.piece === "Halo Setting") {
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      const stone = new THREE.Mesh(stoneGeometry("Round"), gemMat);
+      stone.scale.setScalar(0.065);
+      stone.position.set(Math.cos(a) * 0.5, 1.29, Math.sin(a) * 0.5);
+      group.add(stone);
+    }
+  }
   const crown = new THREE.Group();
   crown.position.y = 1.13;
   const rim = new THREE.Mesh(
@@ -225,6 +237,7 @@ function createJewelry(d: StudioDesign) {
   return group;
 }
 export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
+  const [loading, setLoading] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
     scene: THREE.Scene;
@@ -405,18 +418,103 @@ export function BlackStage({ design, rotating, onReady, onError, api }: Props) {
         );
       }
     });
-    state.model = createJewelry(design);
-    state.model.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.castShadow = true;
-    });
+    let cancelled = false;
+    state.model = new THREE.Group();
     state.scene.add(state.model);
+    const target = state.model;
+    const file =
+      design.piece === "Pendant"
+        ? "pendant"
+        : design.piece === "Pearls"
+          ? "necklace"
+          : design.piece === "Bracelet"
+            ? "bracelet"
+            : null;
+    if (file) {
+      setLoading(true);
+      new GLTFLoader().load(
+        new URL("./models/studio/", document.baseURI).href + file + ".glb",
+        (gltf) => {
+          if (cancelled) return;
+          const asset = gltf.scene;
+          asset.rotation.y = -0.25;
+          if (file === "bracelet") asset.rotation.x = 0.85;
+          asset.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(asset),
+            size = box.getSize(new THREE.Vector3()),
+            center = box.getCenter(new THREE.Vector3());
+          const scale = 2.6 / Math.max(size.x, size.y, size.z);
+          asset.scale.setScalar(scale);
+          asset.position.copy(center.multiplyScalar(-scale));
+          asset.position.y += 0.1;
+          asset.traverse((o) => {
+            if (o instanceof THREE.Mesh) {
+              o.castShadow = true;
+              o.receiveShadow = true;
+              const materials = Array.isArray(o.material)
+                ? o.material
+                : [o.material];
+              materials.forEach((m) => {
+                if (m instanceof THREE.MeshStandardMaterial) {
+                  m.envMapIntensity = 0.6;
+                  m.onBeforeCompile = (shader) => {
+                    shader.uniforms.collectionTone = {
+                      value: new THREE.Color(design.metal),
+                    };
+                    shader.uniforms.collectionFinish = {
+                      value: design.finish === "Satin" ? 0.65 : 0.22,
+                    };
+                    shader.fragmentShader =
+                      "uniform vec3 collectionTone;uniform float collectionFinish;\n" +
+                      shader.fragmentShader;
+                    shader.fragmentShader = shader.fragmentShader.replace(
+                      "#include <metalnessmap_fragment>",
+                      `#include <metalnessmap_fragment>
+float jewelryMask=smoothstep(.08,.22,metalnessFactor);
+float jewelryLight=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+diffuseColor.rgb=mix(diffuseColor.rgb,collectionTone*clamp(jewelryLight*2.,.3,1.2),jewelryMask);
+roughnessFactor=mix(roughnessFactor,collectionFinish,jewelryMask);`,
+                    );
+                  };
+                }
+              });
+            }
+          });
+          target.add(asset);
+          setLoading(false);
+        },
+        undefined,
+        () => {
+          if (!cancelled) {
+            setLoading(false);
+            onError();
+          }
+        },
+      );
+    } else {
+      setLoading(false);
+      target.add(createJewelry(design));
+      target.traverse((o) => {
+        if (o instanceof THREE.Mesh) o.castShadow = true;
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
   }, [design]);
   return (
-    <div
-      className="noir-canvas"
-      ref={host}
-      role="img"
-      aria-label={`Interactive procedural ${design.scene.toLowerCase()} on a stone pedestal. Drag to orbit; scroll or pinch to zoom.`}
-    />
+    <>
+      {loading && (
+        <div className="noir-loading" role="status">
+          Loading {design.piece}…
+        </div>
+      )}
+      <div
+        className="noir-canvas"
+        ref={host}
+        role="img"
+        aria-label={`Interactive ${design.piece} ${design.scene.toLowerCase()} on a stone pedestal. Drag to orbit; scroll or pinch to zoom.`}
+      />
+    </>
   );
 }

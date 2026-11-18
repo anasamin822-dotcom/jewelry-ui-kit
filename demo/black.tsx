@@ -10,6 +10,7 @@ import "../product-react.css";
 import "../studio.css";
 import "./black.css";
 const initial: StudioDesign = {
+  piece: "Classic Solitaire",
   metal: "#e0e3e8",
   gem: "#1644b8",
   shape: "Round",
@@ -26,6 +27,7 @@ function BlackStudio() {
     [compare, setCompare] = useState(false),
     [notice, setNotice] = useState(""),
     [activeView, setActiveView] = useState("Studio");
+  const imported = ["Pendant", "Pearls", "Bracelet"].includes(design.piece);
   const api = useRef<StageApi | null>(null);
   const update = (patch: Partial<StudioDesign>) => {
     setDesign((d) => ({ ...d, ...patch }));
@@ -79,7 +81,7 @@ function BlackStudio() {
           <div className="noir-stage-copy">
             <div className="noir-eyebrow">
               <span />
-              01 / SOLITAIRE STUDY
+              01 / JEWELRY COLLECTION
             </div>
             <h1>A little less ordinary.</h1>
             <p>One stone. Your point of view.</p>
@@ -95,10 +97,10 @@ function BlackStudio() {
             <span>
               NOIR /{" "}
               {design.scene === "Ring"
-                ? "SOLITAIRE"
+                ? design.piece.toUpperCase()
                 : design.scene.toUpperCase()}
             </span>
-            <span>PROCEDURAL 3D · CONCEPT ONLY</span>
+            <span>3D COLLECTION · CONCEPT ONLY</span>
           </div>
           {(!ready || error) && (
             <div className="noir-loading" role="status">
@@ -116,6 +118,7 @@ function BlackStudio() {
               <button
                 key={s}
                 aria-label={s}
+                disabled={imported && s !== "Ring"}
                 aria-pressed={design.scene === s}
                 onClick={() => update({ scene: s })}
               >
@@ -170,8 +173,34 @@ function BlackStudio() {
         <aside className="noir-inspector" aria-label="Design controls">
           <div className="noir-inspector-title">
             <span className="noir-eyebrow">DESIGN / 001</span>
-            <h2>The solitaire</h2>
+            <h2>{design.piece}</h2>
             <p>Your stone, set your way.</p>
+          </div>
+          <div
+            className="noir-pieces"
+            role="group"
+            aria-label="Jewelry collection"
+          >
+            {(
+              [
+                "Classic Solitaire",
+                "Halo Setting",
+                "Pendant",
+                "Pearls",
+                "Bracelet",
+              ] as const
+            ).map((piece) => (
+              <button
+                key={piece}
+                aria-pressed={design.piece === piece}
+                onClick={() => {
+                  update({ piece, scene: "Ring" });
+                  setError(false);
+                }}
+              >
+                {piece}
+              </button>
+            ))}
           </div>
           <nav
             className="noir-tabs"
@@ -216,7 +245,20 @@ function BlackStudio() {
             role="tabpanel"
             aria-labelledby={"tab-" + tab}
           >
-            {tab === "Stone" ? (
+            {tab === "Stone" && imported ? (
+              <>
+                <SectionHeading
+                  eyebrow="ORIGINAL COLLECTION"
+                  title={design.piece}
+                />
+                <p className="noir-explainer">
+                  The same {design.piece.toLowerCase()} model from our earlier
+                  studio, with its original display and textures. Stone geometry
+                  is fixed for this model. Use Metal for tone and finish.
+                </p>
+                <Button onClick={() => setTab("Metal")}>Edit metal</Button>
+              </>
+            ) : tab === "Stone" ? (
               <>
                 <SectionHeading
                   eyebrow="THE CENTERPIECE"

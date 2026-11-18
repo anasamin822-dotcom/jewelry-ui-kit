@@ -61,7 +61,9 @@ The existing `/index.html` kit gallery remains unchanged.
 - Reduced-motion preference disables automatic rotation.
 
 This is an independent visual prototype, not the reference site's implementation.
-No VictorShell code, SDK, models, license config or credentials are included.
+No VictorShell code, SDK, upstream ring models, license config or credentials are included.
+The earlier CC0 pendant, pearl necklace and bracelet GLBs are reused exactly; see public/models/studio/LICENSES.md.
+Classic Solitaire and Halo Setting remain independent procedural dummy rings, not the upstream ring GLBs.
 The dummy gemstone shading is stylized, not physically accurate diamond optics.
 No carat calibration, manufacturing output, checkout, backend or saved designs.
 Three.js is MIT-licensed. Run `npm run typecheck`, `npm run lint` and `npm run build`.
