@@ -116,7 +116,7 @@ function BlackStudio() {
       <header className="noir-header">
         <a
           className="noir-brand"
-          href="./black.html"
+          href="./jewelry-configurator.html"
           aria-label="Jewelry Configurator home"
         >
           <span className="noir-logo">V</span>
